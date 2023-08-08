@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import {
   Card,
   Col,
@@ -32,7 +33,8 @@ const Post = () => {
         const apiPosts = await response.json();
 
         // Get locally stored posts from localStorage
-        const storedPosts = JSON.parse(localStorage.getItem("blogArray")) || [];
+        const storedPosts =
+          JSON.parse(localStorage.getItem("blogArray")) || [];
 
         // Combine local posts and API posts
         const combinedPosts = [
@@ -56,7 +58,8 @@ const Post = () => {
     // Call the fetchPosts function
     fetchPosts();
 
-    const storedComments = JSON.parse(localStorage.getItem("comments")) || {};
+    const storedComments =
+      JSON.parse(localStorage.getItem("comments")) || {};
     setComments(storedComments);
   }, []);
   const loggedInUserId = JSON.parse(localStorage.getItem("userData"))?.userId;
@@ -81,6 +84,7 @@ const Post = () => {
     const postComments = comments[postId] || [];
 
     const newComment = {
+      id: uuidv4(), // Use UUID as the comment ID
       userId,
       comment,
     };
@@ -120,23 +124,30 @@ const Post = () => {
   };
 
   const handleDeletePost = (postId) => {
-    if (isPostOwner(blogArray.find((post) => post.id === postId)?.userId)) {
+    if (
+      isPostOwner(blogArray.find((post) => post.id === postId)?.userId)
+    ) {
       const updatedPosts = blogArray.filter((post) => post.id !== postId);
       setBlogArray(updatedPosts);
       localStorage.setItem("blogArray", JSON.stringify(updatedPosts));
     }
   };
 
-  const handleEditComment = (postId, commentIndex) => {
-    const editedComment = comments[postId][commentIndex].comment;
+  const handleEditComment = (postId, commentId) => {
+    const editedComment = comments[postId].find(
+      (comment) => comment.id === commentId
+    ).comment;
     setEditedComment(editedComment);
-    setEditedCommentIndex(commentIndex);
+    setEditedCommentIndex(commentId);
   };
 
   const handleUpdateComment = (postId) => {
     if (editedCommentIndex !== -1) {
       const updatedComments = { ...comments };
-      updatedComments[postId][editedCommentIndex].comment = editedComment;
+      const commentIndex = updatedComments[postId].findIndex(
+        (comment) => comment.id === editedCommentIndex
+      );
+      updatedComments[postId][commentIndex].comment = editedComment;
       setComments(updatedComments);
       localStorage.setItem("comments", JSON.stringify(updatedComments));
       setEditedComment("");
@@ -144,9 +155,12 @@ const Post = () => {
     }
   };
 
-  const handleDeleteComment = (postId, commentIndex) => {
-    if (isCommentOwner(comments[postId][commentIndex].userId)) {
+  const handleDeleteComment = (postId, commentId) => {
+    if (isCommentOwner(comments[postId].find((comment) => comment.id === commentId)?.userId)) {
       const updatedComments = { ...comments };
+      const commentIndex = updatedComments[postId].findIndex(
+        (comment) => comment.id === commentId
+      );
       updatedComments[postId].splice(commentIndex, 1);
       setComments(updatedComments);
       localStorage.setItem("comments", JSON.stringify(updatedComments));
@@ -161,9 +175,7 @@ const Post = () => {
     <>
       <Container>
         {blogArray.map((post) => (
-          <Row className="post-section-1"
-            key={post.id}
-          >
+          <Row className="post-section-1" key={post.id}>
             <Col>
               <CardGroup>
                 <Card className="p-3">
@@ -172,7 +184,8 @@ const Post = () => {
                       <h4>
                         {post.title}
                         {isUserAuthorized(post.userId) && (
-                          <DropdownButton className="post-handle-button"
+                          <DropdownButton
+                            className="post-handle-button"
                             variant="light"
                             title="Options"
                           >
@@ -191,20 +204,16 @@ const Post = () => {
                       </h4>
                     </div>
                     <Card className="m-2 post-content">
-                      <div >
-                        {post.content}
-                      </div>
+                      <div>{post.content}</div>
                     </Card>
-                    <div >
+                    <div>
                       {comments[post.id] && (
                         <div className="p-2">
-                          <h6 >Comments:</h6>
-                          {comments[post.id].map((commentObj, index) => (
-                            <Card className="comment-font"
-                              key={index}
-                            >
+                          <h6>Comments:</h6>
+                          {comments[post.id].map((commentObj) => (
+                            <Card className="comment-font" key={commentObj.id}>
                               <Card.Body>
-                                {editedCommentIndex === index ? (
+                                {editedCommentIndex === commentObj.id ? (
                                   <>
                                     <Form.Control
                                       type="text"
@@ -213,9 +222,7 @@ const Post = () => {
                                         setEditedComment(e.target.value)
                                       }
                                     />
-                                    <div
-                                      className="comment-buttons"
-                                    >
+                                    <div className="comment-buttons">
                                       <button
                                         variant="dark"
                                         onClick={() =>
@@ -224,7 +231,7 @@ const Post = () => {
                                       >
                                         Save
                                       </button>{" "}
-                                      |{" "}
+                                      |
                                       <button
                                         variant="dark"
                                         onClick={() =>
@@ -240,20 +247,23 @@ const Post = () => {
                                     {commentObj.comment}
                                     <div className="comment-buttons">
                                       {isCommentOwner(
-                                        comments[post.id][index].userId
+                                        commentObj.userId
                                       ) && (
                                         <>
-                                          {editedCommentIndex === index ? (
+                                          {editedCommentIndex ===
+                                          commentObj.id ? (
                                             <>
                                               <button
                                                 variant="dark"
                                                 onClick={() =>
-                                                  handleUpdateComment(post.id)
+                                                  handleUpdateComment(
+                                                    post.id
+                                                  )
                                                 }
                                               >
                                                 Save
                                               </button>{" "}
-                                              |{" "}
+                                              |
                                               <button
                                                 variant="dark"
                                                 onClick={() =>
@@ -270,19 +280,19 @@ const Post = () => {
                                                 onClick={() =>
                                                   handleEditComment(
                                                     post.id,
-                                                    index
+                                                    commentObj.id
                                                   )
                                                 }
                                               >
                                                 Edit
                                               </button>{" "}
-                                              |{" "}
+                                              |
                                               <button
                                                 variant="dark"
                                                 onClick={() =>
                                                   handleDeleteComment(
                                                     post.id,
-                                                    index
+                                                    commentObj.id
                                                   )
                                                 }
                                               >

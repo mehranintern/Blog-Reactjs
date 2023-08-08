@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import logo from "../Images/Logo.png"
+import logo from "../Images/Logo.png";
 import {
   SignUpInitialValues,
   LoginInitialValues,
@@ -35,7 +35,6 @@ const AuthenticationForm = () => {
     localStorage.setItem("usersData", JSON.stringify(usersData));
     navigate(routes.home);
     // Redirect to Home page after successful sign-up
-   
   };
 
   const handleLoginSubmit = (values) => {
@@ -57,7 +56,6 @@ const AuthenticationForm = () => {
       navigate(routes.home);
     } else {
       alert("Invalid email or password. Please try again.");
-      // Do something here, like showing an error message
     }
   };
 
@@ -72,8 +70,6 @@ const AuthenticationForm = () => {
     home: "/Home",
     // Define other routes here
   };
-
-
 
   return (
     <Container>
